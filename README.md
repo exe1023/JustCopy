@@ -10,7 +10,7 @@
 
 現在我是使用 TextRank 抓出內文重點與重要回文後將其填進一些常見記者抄 PTT 文章的格式來產生新聞。不依賴 template 自動產生新聞的部分我們有嘗試過兩個 model， training data 為從蘋果, 自由時報等新聞網站爬下來約 10 萬篇新聞。
 
-- [“Abstractive Sentence Summarization with Attentive Recurrent Neural Networks”, NAACL 2016] (https://github.com/facebookarchive/NAMAS): 容易 overfitting 且無法處理中文因斷詞所以 vocabulary size 太大的問題
+- [“Abstractive Sentence Summarization with Attentive Recurrent Neural Networks”, NAACL 2016](https://github.com/facebookarchive/NAMAS): 容易 overfitting 且無法處理中文因斷詞所以 vocabulary size 太大的問題
 - ["Get To The Point: Summarization with Pointer-Generator Networks", ACL 2017](https://github.com/exe1023/pointer-generator): 現在正在嘗試的 model，處理 OOV 的能力很不錯，但是產生出來的摘要在文法上略嫌不通順，可能是 training data 的問題。
 
 同樣因為一些著作權問題不太方便公開 training data。如果你對自動產生文章有心得或是想要提供中文文章與摘要的 data，歡迎和我們聯絡。
