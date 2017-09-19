@@ -4,7 +4,12 @@
 
 因為一些隱私權問題，我沒有釋出使用的資料庫並註解掉了 code 中有用到 database 的部分。
 
-現在資料庫是從所有 PTT 八卦版的文章建出來的，並用其搜尋和文章相關的圖片使每個產生的新聞都有相對應的圖片。因為我還在改良其他部分的演算法，所以現在這部分是直接用文章的關鍵字 query 資料庫找到類似的文章標題後回傳結果。如果你對資料庫與搜尋演算法的設計與改進有興趣，歡迎聯絡我們或是直接送 pull request，謝謝。
+<strike>現在資料庫是從所有 PTT 八卦版的文章建出來的，並用其搜尋和文章相關的圖片使每個產生的新聞都有相對應的圖片。因為我還在改良其他部分的演算法，所以現在這部分是直接用文章的關鍵字 query 資料庫找到類似的文章標題後回傳結果。如果你對資料庫與搜尋演算法的設計與改進有興趣，歡迎聯絡我們或是直接送 pull request，謝謝。</strike>
+
+現在我使用 ["Reading Wikipedia to Answer Open-Domain Questions", ACL 2017](https://github.com/facebookresearch/DrQA) 提供的 search engine 演算法來找適合的圖片。想使用的人需要
+
+1. [clone 我寫的 interface](https://github.com/exe1023/DrQA)
+2. 把自己爬的 ptt 文章丟進去
 
 ## About Auto Generated Articles
 
@@ -14,6 +19,8 @@
 - ["Get To The Point: Summarization with Pointer-Generator Networks", ACL 2017](https://github.com/exe1023/pointer-generator): 現在正在嘗試的 model，處理 OOV 的能力很不錯，但是產生出來的摘要在文法上略嫌不通順，可能是 training data 的問題。
 
 同樣因為一些著作權問題不太方便公開 training data。如果你對自動產生文章有心得或是想要提供中文文章與摘要的 data，歡迎和我們聯絡。
+
+Update: 現在我使用一份叫做 [CIRB010](kslab.km.nccu.edu.tw/xms/read_attach.php?id=150) 的 data，實際測試在 pointer-generator networks 上後結果還算能接受，但是文法不通順的問題仍待解決。
 
 ## Setup Environment
 
@@ -30,13 +37,15 @@
 
 `python3 journalist`
 
-會每個小時自動執行一次爬 PTT 並產生新聞。
+<strike>會每個小時自動執行一次爬 PTT 並產生新聞。</strike>
+
+後來想想還是請大家自己加 crobtab 跑比較穩定
 
 ## Issues
 
 - 更好看的前端
 - Code 很多部分因為當初設計不良而做了不必要的運算，需要重新整理。
-- DataBase 與搜尋圖片演算法的改良
+- <strike>DataBase 與搜尋圖片演算法的改良</strike>
 - 自動產生內文而不依賴 template
 
 ## Related projects

@@ -11,6 +11,7 @@ import os
 import jieba
 import sys
 import operator
+from tqdm import tqdm
 import pickle
 import re
 dict_path = os.path.join(os.getenv("JIEBA_DATA"), "dict.txt.big") 
@@ -73,9 +74,11 @@ class ArticleFilter(object):
         Initialize the stopwords
         """
         with open(os.path.join(ptt_path, 'stopwords/drop_comment.txt'),'r', encoding='utf-8') as sw:
+            self.dropwords = [word.strip('\n') for word in sw]
+        with open(os.path.join(ptt_path,'stopwords/chinese_sw.txt'), 'r', encoding='utf-8') as sw:
             self.stopwords = [word.strip('\n') for word in sw]
-        #with open('data/stopwords/chinese_sw.txt', 'r', encoding='utf-8') as sw:
-            #self.stopwords += [word.strip('\n') for word in sw]
+        with open(os.path.join(ptt_path,'stopwords/stopwords-tw.txt'), 'r', encoding='utf-8') as sw:
+            self.stopwords += [word.strip('\n') for word in sw]
         with open(os.path.join(ptt_path, 'stopwords/specialMarks.txt'), 'r', encoding='utf-8') as sw:
             self.special_markers = [word.strip('\n') for word in sw]
         with open(os.path.join(ptt_path, 'stopwords/gossiping.tag'),'r', encoding='utf-8') as sw:
@@ -100,7 +103,7 @@ class ArticleFilter(object):
             with open(os.path.join(path, filename),'r', encoding="utf-8") as data:
                 res = self.generate_corpus(json.load(data), marker=marker)
 
-    def generate_corpus(self, articles, drop_response=True, negative_tag=None, no_content=True, min_length=6, marker=''):
+    def generate_corpus(self, articles, drop_response=True, negative_tag=None, no_content=True, min_length=1, marker='', stopwords=False):
 
         """
         依據需求挑選出符合語料庫需求的文章
@@ -119,12 +122,12 @@ class ArticleFilter(object):
             negative_tag = self.stoptags
 
         clean_article = []
-        for article in articles:
+        for article in tqdm(articles):
             #####################濾除非結構化文章#####################
             self.total_article += 1
             try:
                 title = article["Title"]
-                clean_responses = self.clean_responses(article["Responses"], self.stopwords)
+                clean_responses = self.clean_responses(article["Responses"], stopwords=stopwords)
                 if len(clean_responses) == 0:
                     continue # 不需要沒有回應的文章
                 article["Responses"] = clean_responses
@@ -140,6 +143,8 @@ class ArticleFilter(object):
                 #捨去回應類文章與快訊文章, i.e Re: and Fw:
                 if title.startswith("Re") or title.startswith("Fw"):
                     continue
+
+
             #if no_content:
             #    article.pop("Content")
             #######################標籤抽取##########################
@@ -147,9 +152,15 @@ class ArticleFilter(object):
             # clean special markers
             for w in self.special_markers:
                 clean_title = clean_title.replace(w, ' ')
-
             article["Tag"]   = tag
             article["Title"] = clean_title
+
+            if tag == '新聞':
+                clean_content = self.clean_news(article['Content'])
+            else:
+                clean_content = self.clean_content(article['Content'], split_line=False)
+            article['Raw'] = article['Content']
+            article['Content'] = clean_content
             self.titles.add(clean_title)
             self.order_titles.append(clean_title)
             self.order_response.append(clean_responses)
@@ -179,6 +190,8 @@ class ArticleFilter(object):
         # clean the RE pattern
         content = re.sub('引述.*?之銘言', '', content)
         content = re.sub('^:.*?\n ', '', content)
+        # clean FB article
+        content = re.sub('ＦＢ.*?：', '', content)
         # clean the special marker
         content = re.sub('^※.*?\n', '', content)
         content = re.sub('[:：]', ' ', content)
@@ -186,6 +199,7 @@ class ArticleFilter(object):
         content = re.sub('<.*?>', '', content)
         content = re.sub('\[.*?\]', '', content)
         content = re.sub('\/.*?\/', '', content)
+ 
         # clean the non-chinese word (may be useful?)
         #content = re.sub('[”“.,?:\ ][a-z0-9A-Z\ ]+[”“.,?:\ ]', ' ', content)
         # clean the puncatuations
@@ -196,6 +210,8 @@ class ArticleFilter(object):
             content = re.sub('[\ ，。]+', ' ', content)
             content = re.sub('[.、（]+\ ', ' ', content)
 
+        for w in self.special_markers:
+            content = content.replace(w, ' ') 
         return content.strip()
 
     def clean_news(self, content):
@@ -220,7 +236,7 @@ class ArticleFilter(object):
         except:
             return ''
 
-    def clean_responses(self, responses, negative_user=set(), min_length=6, stopwords=None):
+    def clean_responses(self, responses, negative_user=set(), min_length=5, dropwords=None,stopwords=False):
 
         """
         依照負面使用者案例、回應長度與是否包含停用詞來濾除負面的回應
@@ -234,13 +250,16 @@ class ArticleFilter(object):
             - Responses: 已清除負面回應的字典
         """
 
-        if stopwords is None:
+        if dropwords is None:
+            dropwords = self.dropwords
+        if stopwords:
             stopwords = self.stopwords
+        else:
+            stopwords = []
 
         clean_responses = []
 
         for response in responses:
-
             #self._update_users_history(response) # 更新使用者推噓文紀錄
             drop = False
 
@@ -306,7 +325,7 @@ class ArticleFilter(object):
         title = title.lstrip()
         if debug:
             print('Processed tag, title:', tag, title)
-        return tag,title
+        return tag.strip(), title.strip()
 
     def print_titles(self):
 

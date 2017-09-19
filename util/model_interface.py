@@ -1,3 +1,7 @@
+'''
+The python3-friendly data preprocessor for pointer-generator network
+'''
+
 from util.ptt_filter import ArticleFilter
 import os
 import jieba
@@ -7,7 +11,6 @@ from tensorflow.core.example import example_pb2
 
 dict_path = os.path.join(os.getenv('JIEBA_DATA'), 'dict.txt.big')
 jieba.set_dictionary(dict_path)
-
 
 class Interface:
     def __init__(self):

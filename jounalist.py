@@ -3,6 +3,7 @@ from util.news_generator import News_Generator
 from util.crawler import PttWebCrawler
 from util.ptt_filter import ArticleFilter
 from util.model_interface import Interface
+from scripts.retriever.engine import SearchEngine
 import requests
 import urllib
 import datetime
@@ -23,6 +24,18 @@ crawler = PttWebCrawler()
 analyzier = Analyzier()
 Filter = ArticleFilter()
 interface = Interface()
+engine = SearchEngine(os.getenv('DOC'), os.getenv('TFIDF_DATA'))
+
+
+def get_url(texts):
+    for text in texts:
+        urls = analyzier.get_url(text)
+        image_urls = []
+        for url in urls:
+            image_url = analyzier.open_url(url)
+            if image_url != None:
+                return image_url
+
 
 def generate_post(board, article, summary, response, title, paragraph, article_url, url, image_url):
     '''
@@ -106,7 +119,7 @@ def journalist(response=False, database=True):
     news_generator = News_Generator()
     
     # Whether to update the crawled board. Used to debug.
-    check_exist = False
+    check_exist = True
 
     for board in crawl_board:
         # Gossiping updates too fast
@@ -141,15 +154,19 @@ def journalist(response=False, database=True):
                         if image_url != None:
                             image_urls.append(image_url)
                 tag, title = Filter.get_tag(articles[j]['Title'])
-                '''if database:
-                    if len(image_urls) == 0:
-                        key_words = analyzier.extract_keywords(articles[j]['Content'])
-                        url = db.get_url(title, key_words[:5])
+                if database:
+                    if len(image_urls) == 0:     
+                        query = ' '.join(jieba.cut(title, cut_all=False)).strip()
+                        print('search:',query)
+                        search_titles, search_texts = engine.process(query, k=20)
+                        print('result:', search_titles)
+                        #url = db.fast_url(search_titles)
+                        url = get_url(search_texts)
                         if url == None:
                             print('Database not found any url!')
                         else:
                             image_urls.append(url)
-                '''
+                
                 # Generate post
                 print('generate post')
                 generate_post(board, articles[j], summarys[j], responses[j], titles[j], paragraphs[j], article_urls[j], urls[j], image_urls)
@@ -216,6 +233,6 @@ if __name__ == '__main__':
     #add_summary(articles, os.path.join(log_root, exp_name, 'decoded'))
 
 
-    schedule.every(60).minutes.do(journalist)
-    while True:
-        schedule.run_pending()
+    #schedule.every(60).minutes.do(journalist)
+    #while True:
+    #    schedule.run_pending()
